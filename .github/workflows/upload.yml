@@ -26,7 +26,9 @@ jobs:
         run: npx playwright install chromium --with-deps
         
       - name: Create auth.json from Secret
-        run: echo '${{ secrets.NAUKRI_AUTH_JSON }}' > auth.json
+        env:
+          AUTH_SECRET: ${{ secrets.NAUKRI_AUTH_JSON }}
+        run: echo "$AUTH_SECRET" > auth.json
         
       - name: Run Upload Script
         run: npm run upload

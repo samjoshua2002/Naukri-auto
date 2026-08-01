@@ -2,7 +2,7 @@ require('dotenv').config();
 const path = require('path');
 
 module.exports = {
-  HEADLESS: process.env.HEADLESS === 'true',
+  HEADLESS: process.env.HEADLESS !== 'false',
   PROFILE_URL: process.env.PROFILE_URL || 'https://www.naukri.com/mnjuser/profile',
   RESUME_PATH: path.join(__dirname, '..', 'resume', 'resume.pdf'),
   MAX_RETRIES: 3,
