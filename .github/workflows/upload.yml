@@ -28,7 +28,7 @@ jobs:
       - name: Create auth.json from Secret
         env:
           AUTH_SECRET: ${{ secrets.NAUKRI_AUTH_JSON }}
-        run: echo "$AUTH_SECRET" > auth.json
+        run: node -e "require('fs').writeFileSync('auth.json', process.env.AUTH_SECRET)"
         
       - name: Run Upload Script
         run: npm run upload
