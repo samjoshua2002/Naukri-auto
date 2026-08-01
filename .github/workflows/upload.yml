@@ -29,8 +29,16 @@ jobs:
         env:
           AUTH_SECRET: ${{ secrets.NAUKRI_AUTH_JSON }}
         run: node -e "require('fs').writeFileSync('auth.json', process.env.AUTH_SECRET)"
-        
+
+      - name: "Debug: Verify auth.json and network"
+        run: |
+          node -e "const s=require('fs').readFileSync('auth.json','utf8'); console.log('auth.json length:', s.length);"
+          echo "=== curl HTTP/1.1 ==="
+          curl -v --http1.1 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" https://www.naukri.com/mnjuser/profile 2>&1 | tail -30 || true
+          
       - name: Run Upload Script
+        env:
+          DEBUG: pw:api
         run: npm run upload
         
       - name: Upload Screenshots on Failure

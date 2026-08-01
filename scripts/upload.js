@@ -18,12 +18,28 @@ const runUpload = async () => {
     throw new Error(`MISSING_RESUME: Resume file not found at ${config.RESUME_PATH}`);
   }
 
-  const browser = await chromium.launch({ headless: config.HEADLESS });
-  const context = await browser.newContext({ storageState: config.AUTH_FILE });
+  const browser = await chromium.launch({ 
+    headless: config.HEADLESS,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-http2'
+    ]
+  });
+  const context = await browser.newContext({ 
+    storageState: config.AUTH_FILE,
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  });
   const page = await context.newPage();
 
+  // Log failed requests to help diagnose CI networking issues
+  page.on('requestfailed', req => {
+    logger.warn(`Request failed: [${req.method()}] ${req.url()} — ${req.failure()?.errorText}`);
+  });
+
   try {
-    await page.goto(config.PROFILE_URL, { waitUntil: 'domcontentloaded' });
+    await page.goto(config.PROFILE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await waitForPageReady(page);
 
     // Detect if login expired
