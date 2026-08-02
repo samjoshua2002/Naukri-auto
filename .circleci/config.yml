@@ -1,0 +1,63 @@
+version: 2.1
+
+jobs:
+  upload-resume:
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.43.1-jammy  # Has Chromium + deps pre-installed
+    resource_class: medium
+    steps:
+      - checkout
+
+      - run:
+          name: Install Node dependencies
+          command: npm ci
+
+      - run:
+          name: Write auth.json from secret
+          command: echo "$NAUKRI_AUTH_JSON" > auth.json
+
+      - run:
+          name: Verify auth.json
+          command: |
+            echo "auth.json size: $(wc -c < auth.json) bytes"
+            node -e "JSON.parse(require('fs').readFileSync('auth.json','utf8')); console.log('auth.json is valid JSON');"
+
+      - run:
+          name: Run Resume Upload
+          command: npm run upload
+          environment:
+            HEADLESS: "true"
+            PROFILE_URL: "https://www.naukri.com/mnjuser/profile"
+
+      - store_artifacts:
+          path: screenshots/
+          destination: screenshots
+          when: on_fail
+
+      - store_artifacts:
+          path: logs/
+          destination: logs
+
+# Scheduled pipeline — runs daily at 4:00 AM UTC
+# Note: After pushing this config, go to CircleCI → Project → Triggers
+# and create a scheduled trigger for "0 4 * * *" on the main branch
+workflows:
+  scheduled-upload:
+    triggers:
+      - schedule:
+          cron: "0 4 * * *"
+          filters:
+            branches:
+              only:
+                - main
+    jobs:
+      - upload-resume
+
+  # Also allows manual trigger from CircleCI dashboard
+  manual-upload:
+    jobs:
+      - upload-resume:
+          filters:
+            branches:
+              only:
+                - main
