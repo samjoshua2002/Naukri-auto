@@ -39,16 +39,23 @@ const autoLogin = async () => {
     await page.fill('#usernameField', email);
     await page.fill('#passwordField', password);
 
+    // Register navigation listener BEFORE clicking to avoid race conditions.
+    // Use waitForNavigation instead of waitForURL: playwright-extra does not forward
+    // waitUntil/timeout options through its waitForURL wrapper, so 'load' is used
+    // instead of 'domcontentloaded'. In CI, third-party ad/tracking requests all
+    // ERR_ABORT, preventing the 'load' event from ever firing.
+    const navigationPromise = page.waitForNavigation({
+      waitUntil: 'domcontentloaded',
+      timeout: 60000,
+    });
+
     // Click login button
     await page.click('button[type="submit"]');
+    await navigationPromise;
 
-    // Wait for redirect to homepage or profile.
-    // Use domcontentloaded so CI doesn't block on third-party ad/tracking resources
-    // that are ERR_ABORTed in headless environments, which would prevent 'load' from firing.
-    await page.waitForURL(url => !url.href.includes('nlogin'), {
-      timeout: 60000,
-      waitUntil: 'domcontentloaded',
-    });
+    if (page.url().includes('nlogin')) {
+      throw new Error('Login did not redirect away from login page');
+    }
 
     logger.info('Auto-login successful. Saving session...');
 
