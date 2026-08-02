@@ -6,7 +6,6 @@ const config = require('./config');
 const logger = require('./logger');
 const selectors = require('./selectors');
 const { retry, takeScreenshot, waitForPageReady } = require('./utils');
-const { autoLogin } = require('./auto-login');
 
 const runUpload = async () => {
   logger.info('Starting resume upload process...');
@@ -43,13 +42,9 @@ const runUpload = async () => {
     await page.goto(config.PROFILE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await waitForPageReady(page);
 
-    // Detect if login expired — auto re-login if credentials are available
+    // Detect if login expired
     if (page.url().includes('login')) {
-      logger.warn('Session expired. Attempting auto-login...');
-      await browser.close();
-      await autoLogin();
-      logger.info('Re-login done. Retrying upload...');
-      throw new Error('SESSION_REFRESHED: Retrying after auto-login.');
+      throw new Error('LOGIN EXPIRED: Please run npm run login to authenticate again.');
     }
 
     logger.info('Successfully accessed profile page.');
