@@ -43,7 +43,7 @@ const autoLogin = async () => {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to homepage or profile
-    await page.waitForURL(url => !url.includes('nlogin'), { timeout: 20000 });
+    await page.waitForURL(url => !url.href.includes('nlogin'), { timeout: 20000 });
 
     logger.info('Auto-login successful. Saving session...');
 
