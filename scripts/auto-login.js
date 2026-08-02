@@ -42,8 +42,13 @@ const autoLogin = async () => {
     // Click login button
     await page.click('button[type="submit"]');
 
-    // Wait for redirect to homepage or profile
-    await page.waitForURL(url => !url.href.includes('nlogin'), { timeout: 20000 });
+    // Wait for redirect to homepage or profile.
+    // Use domcontentloaded so CI doesn't block on third-party ad/tracking resources
+    // that are ERR_ABORTed in headless environments, which would prevent 'load' from firing.
+    await page.waitForURL(url => !url.href.includes('nlogin'), {
+      timeout: 60000,
+      waitUntil: 'domcontentloaded',
+    });
 
     logger.info('Auto-login successful. Saving session...');
 
