@@ -5,7 +5,8 @@
   "main": "scripts/upload.js",
   "scripts": {
     "login": "node scripts/login.js",
-    "upload": "node scripts/upload.js"
+    "upload": "node scripts/upload.js",
+    "render": "node scripts/render-entrypoint.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

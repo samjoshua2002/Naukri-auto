@@ -1,0 +1,16 @@
+services:
+  - type: cron
+    name: naukri-auto-upload
+    runtime: node
+    schedule: "0 4 * * *"   # Daily at 4:00 AM UTC
+    buildCommand: npm ci && npx playwright install chromium --with-deps
+    startCommand: node scripts/render-entrypoint.js
+    envVars:
+      - key: HEADLESS
+        value: "true"
+      - key: PROFILE_URL
+        value: "https://www.naukri.com/mnjuser/profile"
+      - key: NODE_VERSION
+        value: "22"
+      - key: NAUKRI_AUTH_JSON
+        sync: false   # Mark as secret — you'll paste the value in Render dashboard

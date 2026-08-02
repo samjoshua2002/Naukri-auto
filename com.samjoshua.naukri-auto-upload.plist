@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.samjoshua.naukri-auto-upload</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/samjoshua/Developer/instaid/naukri-auto/scripts/run-upload.js</string>
+    </array>
+
+    <!-- Run daily at 9:30 AM IST (4:00 AM UTC) -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/samjoshua/Developer/instaid/naukri-auto</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/samjoshua/Developer/instaid/naukri-auto/logs/launchd.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/samjoshua/Developer/instaid/naukri-auto/logs/launchd-error.log</string>
+
+    <!-- Run even if the computer was asleep when the job was scheduled -->
+    <key>RunAtLoad</key>
+    <false/>
+
+</dict>
+</plist>
