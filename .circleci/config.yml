@@ -28,6 +28,8 @@ jobs:
           environment:
             HEADLESS: "true"
             PROFILE_URL: "https://www.naukri.com/mnjuser/profile"
+            NAUKRI_EMAIL: $NAUKRI_EMAIL
+            NAUKRI_PASSWORD: $NAUKRI_PASSWORD
 
       - store_artifacts:
           path: screenshots/
