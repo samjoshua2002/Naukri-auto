@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   upload-resume:
     docker:
-      - image: mcr.microsoft.com/playwright:v1.43.1-jammy  # Has Chromium + deps pre-installed
+      - image: mcr.microsoft.com/playwright:v1.62.1-jammy  # Has Chromium + deps pre-installed
     resource_class: medium
     steps:
       - checkout
