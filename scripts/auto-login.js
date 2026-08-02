@@ -1,0 +1,84 @@
+/**
+ * Auto-login using NAUKRI_EMAIL + NAUKRI_PASSWORD env vars.
+ * Called automatically by upload.js when session is detected as expired.
+ */
+const { chromium } = require('playwright-extra');
+const stealth = require('puppeteer-extra-plugin-stealth')();
+chromium.use(stealth);
+const fs = require('fs-extra');
+const config = require('./config');
+const logger = require('./logger');
+
+const autoLogin = async () => {
+  const email = process.env.NAUKRI_EMAIL;
+  const password = process.env.NAUKRI_PASSWORD;
+
+  if (!email || !password) {
+    throw new Error(
+      'AUTO_LOGIN_FAILED: NAUKRI_EMAIL and NAUKRI_PASSWORD env vars must be set. ' +
+      'Add them in CircleCI → Project Settings → Environment Variables.'
+    );
+  }
+
+  logger.info('Session expired. Attempting auto-login...');
+
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+  });
+  const context = await browser.newContext({
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  });
+  const page = await context.newPage();
+
+  try {
+    await page.goto('https://www.naukri.com/nlogin/login', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    // Ensure all page JS is loaded before interacting with the form
+    await page.waitForLoadState('networkidle').catch(() => {});
+
+    // Fill login form with natural keyboard events (avoids JS validation bypasses)
+    await page.waitForSelector('#usernameField', { timeout: 10000 });
+    await page.click('#usernameField');
+    await page.type('#usernameField', email, { delay: 50 });
+
+    await page.click('#passwordField');
+    await page.type('#passwordField', password, { delay: 50 });
+
+    // Submit via Enter key — more reliable than clicking the button in headless mode
+    await page.press('#passwordField', 'Enter');
+
+    // Capture page state shortly after submit for debugging if navigation fails
+    await page.waitForTimeout(3000);
+    await fs.ensureDir(config.SCREENSHOT_FOLDER);
+    await page.screenshot({ path: require('path').join(config.SCREENSHOT_FOLDER, 'post-submit.png') }).catch(() => {});
+
+    // Naukri uses SPA-style (history.pushState) navigation after login, which does not
+    // fire Playwright's waitForNavigation event. Poll window.location.href directly instead.
+    await page.waitForFunction(
+      () => !window.location.href.includes('nlogin'),
+      null,
+      { timeout: 60000 }
+    );
+
+    if (page.url().includes('nlogin')) {
+      throw new Error('Login did not redirect away from login page');
+    }
+
+    logger.info('Auto-login successful. Saving session...');
+
+    await fs.ensureDir(require('path').dirname(config.AUTH_FILE));
+    await context.storageState({ path: config.AUTH_FILE });
+
+    logger.info('New session saved to auth.json');
+    return true;
+
+  } catch (error) {
+    await fs.ensureDir(config.SCREENSHOT_FOLDER).catch(() => {});
+    await page.screenshot({ path: require('path').join(config.SCREENSHOT_FOLDER, 'login-failure.png') }).catch(() => {});
+    throw new Error(`Auto-login failed: ${error.message}. Check credentials and screenshot.`);
+  } finally {
+    await browser.close();
+  }
+};
+
+module.exports = { autoLogin };
