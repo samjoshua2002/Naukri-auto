@@ -39,19 +39,16 @@ const autoLogin = async () => {
     await page.fill('#usernameField', email);
     await page.fill('#passwordField', password);
 
-    // Register navigation listener BEFORE clicking to avoid race conditions.
-    // Use waitForNavigation instead of waitForURL: playwright-extra does not forward
-    // waitUntil/timeout options through its waitForURL wrapper, so 'load' is used
-    // instead of 'domcontentloaded'. In CI, third-party ad/tracking requests all
-    // ERR_ABORT, preventing the 'load' event from ever firing.
-    const navigationPromise = page.waitForNavigation({
-      waitUntil: 'domcontentloaded',
-      timeout: 60000,
-    });
-
     // Click login button
     await page.click('button[type="submit"]');
-    await navigationPromise;
+
+    // Naukri uses SPA-style (history.pushState) navigation after login, which does not
+    // fire Playwright's waitForNavigation event. Poll window.location.href directly instead.
+    await page.waitForFunction(
+      () => !window.location.href.includes('nlogin'),
+      null,
+      { timeout: 60000 }
+    );
 
     if (page.url().includes('nlogin')) {
       throw new Error('Login did not redirect away from login page');
